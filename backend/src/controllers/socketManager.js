@@ -84,7 +84,7 @@ export const connectToSocket = (server) => {
         isWaitingForHost: false,
       });
 
-      // Update or create meeting in DB
+// Update or create meeting in DB
       try {
         let meeting = await Meeting.findOne({ meetingId: roomId });
         if (!meeting) {
@@ -92,12 +92,17 @@ export const connectToSocket = (server) => {
           meeting = new Meeting({
             meetingId: roomId,
             title: `Meeting ${roomId.slice(0, 8)}`,
+            hostId: userId || null,  // Set hostId if available
             hostName: name,
             status: "active",
             startedAt: new Date(),
             participants: [],
             chat: [],
           });
+        } else if (!meeting.hostId && isHost && userId) {
+          // Update hostId if it wasn't set before (backwards compatibility)
+          meeting.hostId = userId;
+          await meeting.save();
         }
 
         // Mark as active if previously completed

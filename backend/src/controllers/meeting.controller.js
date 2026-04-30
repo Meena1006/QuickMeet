@@ -189,7 +189,37 @@ const endMeeting = async (req, res) => {
     meeting.duration = duration;
     await meeting.save();
 
-    res.json({ message: "Meeting ended", meeting });
+res.json({ message: "Meeting ended", meeting });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+};
+
+// Public endpoint for getting meeting info without auth - used by host dashboard
+const getMeetingInfo = async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const meeting = await Meeting.findOne({ meetingId });
+
+    if (!meeting) {
+      return res.status(httpStatus.NOT_FOUND).json({ 
+        valid: false, 
+        message: "Meeting not found",
+        meetingId 
+      });
+    }
+
+    res.json({
+      valid: true,
+      meetingId: meeting.meetingId,
+      title: meeting.title,
+      status: meeting.status,
+      hostId: meeting.hostId,
+      hostName: meeting.hostName,
+      startedAt: meeting.startedAt,
+      peakParticipants: meeting.peakParticipants,
+      totalJoined: meeting.totalJoined,
+    });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
@@ -202,5 +232,6 @@ export {
   getMyMeetings,
   getAttendanceReport,
   endMeeting,
+  getMeetingInfo,
 };
 

@@ -107,9 +107,10 @@ const presentDuration = (joinedAt) => {
 
 // Check if current user is the host of this meeting
   useEffect(() => {
-    const verifyHost = async () => {
+const verifyHost = async () => {
       try {
-        const res = await api.get("/meetings/" + roomId);
+        // Use the public /info endpoint that doesn't require auth
+        const res = await api.get("/meetings/info/" + roomId);
         const meeting = res.data;
         
         // Check if current user is the host (owner) of this meeting

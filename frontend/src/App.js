@@ -1,4 +1,5 @@
 import "./App.css";
+import { HashRouter } from "react-router-dom";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -35,7 +36,8 @@ function LoginRedirect() {
 
 function App() {
   return (
-    <Router>
+    // <Router>
+    <HashRouter>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<InviteRedirect />} />
@@ -93,7 +95,9 @@ function App() {
           />
         </Routes>
       </AuthProvider>
-    </Router>
+    </HashRouter>
+
+    {/* </Router> */}
   );
 }
 

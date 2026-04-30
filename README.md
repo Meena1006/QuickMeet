@@ -92,7 +92,7 @@ npm install
 ```
 
 
-### 3. Run the Application
+### 2. Run the Application
 
 ```bash
 # Terminal 1 - Backend

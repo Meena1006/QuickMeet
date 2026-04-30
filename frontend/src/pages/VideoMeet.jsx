@@ -357,7 +357,7 @@ socket.on("user-started-screen-share", (id) => {
   };
 
 const goToDashboard = () => {
-  
+
     window.open(`/dashboard/${roomId}`, "_blank");
 
   };

@@ -136,27 +136,19 @@ const verifyHost = async () => {
           return;
         }
         
-        // Check if meeting has ended
-        if (meeting.status === "completed") {
-          setError("This meeting has already ended");
-          setIsHost(false);
-          setLoading(false);
-          return;
-        }
-        
-        // Check if current user is the host (owner) of this meeting
+// Check if current user is the host (owner) of this meeting
         // Support both REST API created meetings (with hostId) and Socket.IO created meetings (hostId may be null)
         let isHostUser = false;
         
         if (meeting.hostId && user) {
           // Primary check: hostId is set (REST API created meeting)
           isHostUser = meeting.hostId.toString() === user._id.toString();
-        } else if (meeting.hostName && user && user.name) {
+} else if (meeting.hostName && user && user.name) {
           // Fallback check: Compare hostName for socket-created meetings
-          // Also check if the meeting is still active (not ended)
+          // Host can view dashboard both during and after (completed) meeting
           // Case-insensitive comparison to handle different casing
           isHostUser = meeting.hostName.toLowerCase().trim() === user.name.toLowerCase().trim() && 
-                      meeting.status === "active";
+                      (meeting.status === "active" || meeting.status === "completed");
         }
         
         // Debug logging for troubleshooting

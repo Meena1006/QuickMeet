@@ -105,27 +105,55 @@ const presentDuration = (joinedAt) => {
     return Math.floor((Date.now() - new Date(joinedAt)) / 1000);
   };
 
-  // Check if current user is the host of this meeting
+// Check if current user is the host of this meeting
   useEffect(() => {
     const verifyHost = async () => {
       try {
         const res = await api.get("/meetings/" + roomId);
         const meeting = res.data;
+        
         // Check if current user is the host (owner) of this meeting
-        const isHostUser = meeting.hostId && user && meeting.hostId.toString() === user._id.toString();
+        // Support both REST API created meetings (with hostId) and Socket.IO created meetings (hostId may be null)
+        let isHostUser = false;
+        
+        if (meeting.hostId && user) {
+          // Primary check: hostId is set (REST API created meeting)
+          isHostUser = meeting.hostId.toString() === user._id.toString();
+        } else if (meeting.hostName && user && user.name) {
+          // Fallback check: Compare hostName for socket-created meetings
+          // Also check if the meeting is still active (not ended)
+          // Case-insensitive comparison to handle different casing
+          isHostUser = meeting.hostName.toLowerCase().trim() === user.name.toLowerCase().trim() && 
+                      meeting.status === "active";
+        }
+        
+        // Debug logging for troubleshooting
+        console.log("Host verification:", {
+          meetingHostId: meeting.hostId,
+          meetingHostName: meeting.hostName,
+          userId: user?._id,
+          userName: user?.name,
+          meetingStatus: meeting.status,
+          isHostUser
+        });
+        
         setIsHost(isHostUser);
         if (!isHostUser) {
-          // Redirect non-hosts to history page
+          // Non-hosts get redirected to history page
+          console.log("User is not host, redirecting to history");
           navigate("/history");
         }
-      } catch {
-        navigate("/history");
+      } catch (err) {
+        console.error("Error verifying host:", err);
+        // In case of API error, we'll show an error state but allow retry
+        // This handles temporary network issues
+        setIsHost(false);
       } finally {
         setLoading(false);
       }
     };
     verifyHost();
-  }, [roomId, user]);
+  }, [roomId, user, navigate]);
 
   if (loading) {
     return (

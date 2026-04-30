@@ -1,0 +1,356 @@
+================================================================================
+INTERVIEW QUESTIONS AND ANSWERS - VIDEO CONFERENCE WEBSITE
+================================================================================
+
+================================================================================
+PART 1: PROJECT OVERVIEW
+================================================================================
+
+Q: Can you briefly describe your project?
+A: I built a real-time video collaboration platform using the MERN stack (MongoDB,
+Express, React, Node.js). It's a full-stack web application that enables users to
+create and join video meetings with features like multi-user video calls, real-time
+chat, screen sharing, host analytics dashboard, and post-meeting attendance
+reports. The application uses WebRTC for peer-to-peer video communication and
+Socket.IO for real-time signaling and chat.
+
+Q: What was the motivation behind building this project?
+A: The main motivation was to create a practical video conferencing solution
+that addresses common meeting needs - especially attendance tracking. Unlike major
+platforms that charge premium prices for analytics, this project provides real-time
+participant monitoring, join/leave time tracking, and attendance percentages at no
+cost. It was also a great learning opportunity for WebRTC, Socket.IO, and full-stack
+development.
+
+================================================================================
+PART 2: TECHNICAL ARCHITECTURE & TECH STACK
+================================================================================
+
+Q: What tech stack did you use and why?
+A: Frontend: React (CRA) with React Router for routing, Material UI (MUI) for
+components, Socket.IO Client for real-time communication, WebRTC APIs for video/audio,
+and Context API for state management. Backend: Node.js with Express framework, Socket.IO
+for WebSocket handling, MongoDB with Mongoose for data persistence, JWT for
+authentication, and bcrypt for password hashing. I chose these technologies because
+they are well-documented, have large communities, and work seamlessly together.
+
+Q: Explain your project structure?
+A: The project is divided into two main directories: 'frontend' and 'backend'.
+
+Frontend structure:
+  - src/components/     : Reusable UI components (Navbar, ProtectedRoute, VideoGrid, etc.)
+  - src/pages/          : Page components (Login, Register, VideoMeet, MeetingDashboard, etc.)
+  - src/contexts/       : React Context for authentication state
+  - src/services/       : API and Socket service modules
+  - src/styles/        : CSS files
+  - src/utils/         : Utility functions and HOCs
+
+Backend structure:
+  - src/controllers/   : Business logic (user, meeting, socket management)
+  - src/models/        : Mongoose schemas (User, Meeting)
+  - src/routes/       : API route definitions
+  - src/middleware/   : Authentication middleware (JWT verification)
+
+Q: How do the frontend and backend communicate?
+A: The frontend communicates with the backend through:
+  1. REST API calls (using axios) for authentication and meeting management
+  2. WebSocket (Socket.IO) for real-time features during meetings
+
+REST Endpoints:
+  - POST /api/v1/users/register - User registration
+  - POST /api/v1/users/login    - User login
+  - GET  /api/v1/users/profile  - Get user profile
+  - POST /api/v1/meetings/create - Create new meeting
+  - GET  /api/v1/meetings/my-meetings - Get user's meeting history
+  - GET  /api/v1/meetings/validate/:meetingId - Validate meeting code
+  - GET  /api/v1/meetings/attendance/:meetingId - Get attendance report
+
+WebSocket Events (during meeting):
+  - join-call, leave-call, signal, chat-message, toggle-mic, toggle-camera,
+    screen-share-start, screen-share-stop, end-meeting, get-live-participants
+
+================================================================================
+PART 3: KEY FEATURES & IMPLEMENTATION
+================================================================================
+
+Q: How does user authentication work?
+A: The authentication system uses JWT (JSON Web Tokens):
+  1. On registration: User provides name, email, password. Backend hashes the
+     password using bcrypt and stores the user in MongoDB.
+  2. On login: Backend verifies credentials, generates a JWT token signed with
+     JWT_SECRET, and returns it to the client.
+  3. The client stores the token in localStorage and includes it in the Authorization
+     header for protected API calls.
+  4. The auth middleware verifies the token signature and decodes the user info.
+  5. On token expiry: The client checks token expiration and redirects to login.
+
+Key code from auth.middleware.js:
+  - Verifies JWT token from Authorization header
+  - Decodes user ID from token payload
+  - Attaches user object to req.user for use in controllers
+
+Q: How do you handle multi-user video calls with WebRTC?
+A: The video call implementation uses WebRTC with a mesh topology:
+
+  1. SETUP: Each user gets their local media stream (camera/mic) using
+     navigator.mediaDevices.getUserMedia()
+
+  2. SIGNALING: Socket.IO is used to exchange WebRTC signaling data:
+     - When a user joins, they emit 'join-call' with their user info
+     - Server notifies existing users via 'user-joined' event
+     - Existing users emit 'existing-users' to the new user
+     - Peers exchange ICE candidates via 'signal' events
+
+  3. PEER CONNECTION: Each peer maintains RTCPeerConnection with every other
+     peer (mesh topology):
+     - When user A joins, they create an offer for user B
+     - User B receives the offer, creates an answer, and exchanges ICE candidates
+     - Media streams are added as tracks to each peer connection
+
+  4. TRACK HANDLING: When a remote track arrives, it's attached to the
+     corresponding <video> element using the stream ID
+
+Key code from VideoMeet.jsx:
+  - rtcConfig: STUN server configuration for NAT traversal
+  - createPeer(): Creates RTCPeerConnection and handles signaling
+  - handleSignal(): Processes incoming SDP offers/answers and ICE candidates
+  - ontrack: Attaches remote media streams to video elements
+
+Q: How does real-time chat work?
+A: Real-time chat uses Socket.IO events:
+  1. When a user sends a message, 'chat-message' event is emitted with sender
+     name and message content
+  2. Server broadcasts the message to all participants in the room
+  3. Client receives 'chat-message' and adds it to the messages state
+  4. Chat history is loaded via 'load-old-messages' event when joining
+
+Q: How does screen sharing work?
+A: Screen sharing implementation:
+  1. User clicks share button -> navigator.mediaDevices.getDisplayMedia() is called
+  2. The display video track replaces the camera track in all peer connections
+     using pc.getSenders().find(s => s.track.kind === 'video').replaceTrack()
+  3. Local video element shows the shared screen
+  4. When stopping, camera track is restored in all peer connections
+
+Q: How do you track attendance?
+A: Attendance tracking is managed both in real-time and post-meeting:
+
+  REAL-TIME (during meeting):
+  - Participants are added to the meeting.participants array when they join
+  - Track join time (joinedAt), mic/camera status, screen sharing status
+  - Maintain peakParticipants count (highest concurrent user count)
+  - Track totalJoined (total users who joined throughout the meeting)
+
+  POST-MEETING (when meeting ends):
+  - Calculate duration = endedAt - startedAt
+  - For each participant: duration = leftAt - joinedAt
+  - attendancePercent = (participant.duration / total.duration) * 100
+  - Average attendance = sum of all attendance percentages / number of participants
+
+================================================================================
+PART 4: IMPORTANT POINTS & CHALLENGES
+================================================================================
+
+Q: What are the important considerations for this project?
+
+A: 1. SECURITY:
+     - JWT tokens have expiration (configured in backend .env)
+     - API routes are protected with auth middleware
+     - Meeting attendance data is only visible to the host
+
+   2. SCALABILITY:
+     - Mesh WebRTC topology works well for small meetings (2-6 people)
+     - For larger meetings, an SFU (Selective Forwarding Unit) like Mediasoup
+       would be needed to avoid bandwidth issues
+     - Each peer in mesh topology sends N-1 video streams
+
+   3. PRODUCTION CONSIDERATIONS:
+     - WebRTC requires HTTPS for camera/mic access on some browsers
+     - MongoDB Atlas connection string needs proper configuration
+     - Environment variables should be properly set
+     - Error handling and logging should be enhanced
+
+   4. USER EXPERIENCE:
+     - Mic and camera are disabled by default for privacy
+     - Users can copy meeting link for easy sharing
+     - Waiting screen when host hasn't joined yet
+     - Meeting expiration after 24 hours
+
+Q: What challenges did you face and how did you overcome them?
+
+A: 1. WEBRTC CONNECTION ISSUES:
+     - Problem: Peers sometimes couldn't connect due to NAT traversal
+     - Solution: Used Google STUN server (stun:stun.l.google.com:19302)
+     - For production, TURN servers would be needed for strict NATs
+
+   2. STATE MANAGEMENT:
+     - Problem: Managing participant states across components
+     - Solution: Used React Context (AuthContext) for global state
+
+   3. SOCKET RECONNECTION:
+     - Problem: Socket disconnection during network issues
+     - Solution: Socket service with auto-reconnection logic
+
+   4. MEETING EXPIRATION:
+     - Problem: Meetings staying active indefinitely
+     - Solution: Added 24-hour expiration check in Socket.IO
+
+Q: What would you improve if you had more time?
+
+A: 1. Add recording functionality
+   2. Implement breakout rooms
+   3. Add virtual backgrounds
+   4. Implement an SFU for larger meetings (>6 participants)
+   5. Add end-to-end encryption
+   6. Add calendar integration
+   7. Add waiting room feature
+   8. Improve mobile responsiveness
+   9. Add push notifications
+   10. Implement file sharing during meetings
+
+================================================================================
+PART 5: INTERVIEW QUESTION BANK
+================================================================================
+
+--- BASIC QUESTIONS ---
+
+Q1: What is the difference between HTTP and WebSocket?
+A: HTTP is request-response based - client sends a request, server responds, then
+   connection closes. WebSocket is full-duplex - connection stays open, allowing
+   either party to send messages anytime. WebSocket is ideal for real-time apps
+   like chat and live updates.
+
+Q2: What is WebRTC?
+A: WebRTC (Web Real-Time Communication) is a browser API for peer-to-peer media
+   communication. It enables direct video/audio/data transfer between browsers
+   without going through a server (except for signaling).
+
+Q3: What is Socket.IO?
+A: Socket.IO is a JavaScript library for real-time, bidirectional communication.
+   It uses WebSocket as the transport with fallback to HTTP long polling. It provides
+   event-based communication and automatic reconnection.
+
+Q4: What is JWT and how does it work?
+A: JWT (JSON Web Token) is a token format for securely transmitting information.
+   It consists of header.payload.signature. The server signs tokens with a secret key.
+   Clients include tokens in requests; servers verify the signature to validate.
+
+Q5: What is the mesh topology in WebRTC?
+A: Mesh topology means each participant connects directly to every other participant.
+   If N people are in a call, each person has N-1 peer connections. This works
+   for small groups but doesn't scale well due to bandwidth limitations.
+
+--- ADVANCED QUESTIONS ---
+
+Q6: How do you handle ICE candidates in WebRTC?
+A: ICE candidates are collected by the ICE server (STUN/TURN) and exchanged
+   between peers via signaling. When a peer receives an ICE candidate, they
+   call addIceCandidate() to add it to the RTCPeerConnection. Once both peers
+   have exchanged candidates and agreed on a route, the connection is established.
+
+Q7: What is the difference between STUN and TURN servers?
+A: STUN (Session Traversal Utilities for NAT) helps peers discover their public
+   IP and port mapping. It works for about 80% of NATs. TURN (Traversal Using
+   Relays around NAT) acts as a relay server when direct peer-to-peer connection
+   isn't possible. TURN is more reliable but adds latency and server costs.
+
+Q8: How does the auth middleware verify tokens?
+A: The middleware:
+   1. Gets token from Authorization header (Bearer token format)
+   2. Verifies token signature using jwtSecret from environment
+   3. Decodes token payload to get user ID
+   4. Looks up user in database
+   5. Attaches user to req.user for downstream use
+
+Q9: How do you prevent unauthorized meeting access?
+A: Several measures:
+   - Meeting creation requires authentication
+   - Meeting attendance data only returned to host
+   - Meeting end only allowed by host
+   - Deep links redirect to login if unauthenticated
+
+Q10: How do you calculate attendance percentage?
+A: attendancePercent = (participant.timeInMeeting / totalMeetingDuration) * 100
+    - participant.timeInMeeting = leftAt - joinedAt (in seconds)
+    - totalMeetingDuration = endedAt - startedAt (in seconds)
+
+--- DEEP DIVE QUESTIONS ---
+
+Q11: Explain the flow when a user joins a meeting.
+A: 1. User enters meeting code or clicks link
+   2. If not authenticated, redirect to login
+   3. Validate meetingId against database
+   4. User enters name and clicks Join
+   5. Get local media stream (camera/mic)
+   6. Connect to Socket.IO and emit 'join-call'
+   7. Server adds user to room and notifies others
+   8. Existing users send offers via WebRTC
+   9. New user creates answers
+   10. ICE candidates exchanged
+   11. Peer connections established
+   12. Videos appear for all participants
+
+Q12: How do you handle participant tracking in real-time?
+A: 1. When user joins: Add to participants array with joinedAt timestamp
+   2. On toggle-mic/camera: Update micOn/cameraOn fields
+   3. On screen-share: Update isScreenSharing field
+   4. On user-left: Set leftAt, calculate duration
+   5. Update peakParticipants if current count > peak
+   6. On meeting end: Calculate attendance percentages
+
+Q13: What is the purpose of the meeting dashboard?
+A: The host dashboard provides:
+   - Real-time participant count
+   - Peak participants achieved
+   -Meeting duration
+   - Individual participant status (mic/camera on/off)
+   - Host controls (end meeting)
+
+Q14: How do you handle meeting expiration?
+A: Meetings have a 24-hour time limit:
+   1. When host ends meeting: Status becomes 'completed', save endedAt
+   2. On Socket connection: Check if meeting expired
+   3. If expired: Emit 'meeting-expired' event, disconnect all users
+   4. Users see expiration message and can view post-meeting reports
+
+Q15: What database indexes do you use and why?
+A: In meeting.model.js:
+   - meetingId: { unique: true, index: true } - For fast meeting lookups
+   - hostId: For finding meetings hosted by a user
+   - participants.userId: For finding meetings a user participated in
+   - status: For filtering active/completed meetings
+
+================================================================================
+PART 6: QUICK REFERENCE COMMANDS
+================================================================================
+
+INSTALLATION:
+  cd backend && npm install
+  cd frontend && npm install
+
+RUNNING:
+  # Terminal 1 - Backend
+  cd backend
+  npm run dev
+
+  # Terminal 2 - Frontend
+  cd frontend
+  npm start
+
+ACCESS:
+  Frontend: http://localhost:3000
+  Backend API: http://localhost:8000
+
+ENVIRONMENT VARIABLES:
+  Backend (.env):
+    PORT=8000
+    MONGO_URI=mongodb+srv://...
+    JWT_SECRET=your_secret_key
+    JWT_EXPIRE=7d
+
+  Frontend (.env):
+    REACT_APP_API_BASE_URL=http://localhost:8000
+
+================================================================================
+END OF NOTES
+================================================================================

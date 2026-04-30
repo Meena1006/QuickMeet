@@ -1,0 +1,206 @@
+/* reset */
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,sans-serif;
+}
+
+/* page layout */
+.auth-page{
+display:flex;
+min-height:100vh;
+}
+
+/* left panel */
+.auth-left{
+flex:1;
+background:
+linear-gradient(
+rgba(8,22,41,.45),
+rgba(8,22,41,.75)
+),
+url("https://images.unsplash.com/photo-1516321497487-e288fb19713f");
+
+background-size:cover;
+background-position:center;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.overlay{
+color:white;
+text-align:center;
+}
+
+.overlay h1{
+font-size:4rem;
+margin-bottom:20px;
+}
+
+.overlay p{
+font-size:1.4rem;
+opacity:.9;
+}
+
+/* right */
+.auth-right{
+flex:1;
+background:#081629;
+
+display:flex;
+justify-content:center;
+align-items:center;
+padding:40px;
+}
+
+/* card */
+.auth-card{
+width:100%;
+max-width:560px;
+
+background:#132a4d;
+
+padding:55px 45px;
+
+border-radius:30px;
+
+box-shadow:
+0 20px 60px rgba(0,0,0,.35);
+
+color:white;
+}
+
+/* lock */
+.lock-icon{
+width:70px;
+height:70px;
+
+margin:auto;
+
+background:#ff7a00;
+border-radius:50%;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:2rem;
+
+box-shadow:
+0 0 25px rgba(255,122,0,.4);
+}
+
+.auth-card h2{
+text-align:center;
+font-size:3rem;
+margin:30px 0;
+}
+
+/* tabs */
+.tabs{
+display:flex;
+justify-content:center;
+gap:15px;
+margin-bottom:35px;
+}
+
+.tabs button{
+padding:12px 28px;
+border-radius:14px;
+border:1px solid #35547c;
+
+background:transparent;
+color:white;
+
+cursor:pointer;
+transition:.25s;
+}
+
+.tabs button:hover{
+background:white;
+color:#081629;
+transform:translateY(-2px);
+}
+
+.tabs .active{
+background:#ff7a00;
+border:none;
+}
+
+/* inputs */
+.form input{
+width:100%;
+padding:18px 20px;
+margin-bottom:18px;
+
+border:none;
+outline:none;
+
+border-radius:16px;
+font-size:1rem;
+}
+
+/* errors */
+.error{
+color:#ff8d8d;
+min-height:24px;
+margin-bottom:10px;
+}
+
+.success{
+margin-top:15px;
+color:#80ffb0;
+}
+
+/* submit */
+.submit-btn{
+width:100%;
+border:none;
+
+background:#ff7a00;
+color:white;
+
+padding:16px;
+border-radius:16px;
+
+font-size:1rem;
+font-weight:600;
+
+cursor:pointer;
+
+box-shadow:
+0 8px 24px rgba(255,122,0,.35);
+
+transition:.2s;
+}
+
+.submit-btn:hover{
+background:#ff8d1f;
+transform:translateY(-3px);
+}
+
+.submit-btn:active{
+transform:translateY(2px) scale(.98);
+}
+
+/* mobile */
+@media(max-width:900px){
+
+.auth-left{
+display:none;
+}
+
+.auth-right{
+width:100%;
+}
+
+.auth-card{
+max-width:420px;
+}
+
+}

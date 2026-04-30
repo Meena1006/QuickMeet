@@ -1,44 +1,23 @@
-# Real-Time Video Collaboration Platform - Implementation TODO
+# TODO - Meeting Dashboard Fix
 
-## Phase 1: Backend Foundation
-- [x] Update User Model (email-based, timestamps)
-- [x] Update Meeting Model (attendance tracking, hostId)
-- [x] Create Auth Middleware (JWT verification)
-- [x] Rewrite User Controller (JWT, email auth, profile)
-- [x] Create Meeting Controller (CRUD, attendance reports)
-- [x] Rewrite Socket Manager (clean, host features, attendance)
-- [x] Update/Create Routes (users, meetings)
-- [x] Update App Entry (register routes, middleware)
+## Task
+Fix the Meeting Dashboard showing blank "NOT FOUND" page
 
-## Phase 2: Frontend Services & Auth
-- [x] Update Environment config
-- [x] Create API Service (axios + JWT interceptor)
-- [x] Create Socket Service
-- [x] Rewrite AuthContext (JWT, persist, profile)
-- [x] Create ProtectedRoute component
-- [x] Create Navbar component
+## Issue
+- Meeting Dashboard at /dashboard/:roomId shows blank dark page
+- Root cause: When user is not the host OR API fails, code returns null (blank)
+- Missing proper error handling and user feedback
 
-## Phase 3: Frontend Pages (Material UI)
-- [x] Rewrite Landing (hero, auto-redirect)
-- [x] Create Login page
-- [x] Create Register page
-- [x] Rewrite Home/Dashboard
-- [x] Rewrite VideoMeet (professional UI, chat, controls)
-- [x] Rewrite MeetingDashboard (host live analytics)
-- [x] Rewrite MeetingDetails (post-meeting analytics)
+## Plan
+1. [x] Identify root cause in MeetingDashboard.jsx
+2. [ ] Update MeetingDashboard to show proper error/info messages
+3. [ ] Add better error handling for API failures
+4. [ ] Ensure proper redirect for non-host users
+5. [ ] Test and verify
 
-## Phase 4: Routing & Integration
-- [x] Update App.js routes
-- [x] Implement invite link/deep link flow
+## Files to Edit
+- frontend/src/pages/MeetingDashboard.jsx
 
-## Phase 5: Polish & Docs
-- [x] Env examples
-- [x] README with setup instructions
-- [x] Final dependency check
-
-## Status: COMPLETE
-- Backend running on http://localhost:8000
-- Frontend running on http://localhost:3000
-- MongoDB connected
-- All features implemented per spec
-
+## Follow up
+- Rebuild and redeploy frontend
+- Test with meeting ID: 7da8ceda-8c31-4932-909a-9d503172b37a

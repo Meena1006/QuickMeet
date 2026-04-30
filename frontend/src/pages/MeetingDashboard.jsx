@@ -17,6 +17,8 @@ import {
   CardContent,
   Stack,
   CircularProgress,
+  Alert,
+  Button,
 } from "@mui/material";
 import {
   People,
@@ -27,6 +29,8 @@ import {
   MicOff,
   Videocam,
   VideocamOff,
+  ErrorOutline,
+  ArrowBack,
 } from "@mui/icons-material";
 import { getSocket } from "../services/socket";
 import { useAuth } from "../contexts/AuthContext";
@@ -41,8 +45,10 @@ export default function MeetingDashboard() {
   const [duration, setDuration] = useState(0);
   const [peakParticipants, setPeakParticipants] = useState(0);
   const [totalJoined, setTotalJoined] = useState(0);
-  const [isHost, setIsHost] = useState(null);
+const [isHost, setIsHost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [meetingInfo, setMeetingInfo] = useState(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -108,10 +114,35 @@ const presentDuration = (joinedAt) => {
 // Check if current user is the host of this meeting
   useEffect(() => {
 const verifyHost = async () => {
+      if (!user) {
+        setError("Please log in to view the dashboard");
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Use the public /info endpoint that doesn't require auth
         const res = await api.get("/meetings/info/" + roomId);
         const meeting = res.data;
+        
+        // Store meeting info for display
+        setMeetingInfo(meeting);
+        
+        // Check if meeting exists and is valid
+        if (!meeting.valid) {
+          setError(meeting.message || "Meeting not found");
+          setIsHost(false);
+          setLoading(false);
+          return;
+        }
+        
+        // Check if meeting has ended
+        if (meeting.status === "completed") {
+          setError("This meeting has already ended");
+          setIsHost(false);
+          setLoading(false);
+          return;
+        }
         
         // Check if current user is the host (owner) of this meeting
         // Support both REST API created meetings (with hostId) and Socket.IO created meetings (hostId may be null)
@@ -138,16 +169,13 @@ const verifyHost = async () => {
           isHostUser
         });
         
-        setIsHost(isHostUser);
-        if (!isHostUser) {
-          // Non-hosts get redirected to history page
-          console.log("User is not host, redirecting to history");
-          navigate("/history");
-        }
+setIsHost(isHostUser);
+        // Note: Don't redirect - let the info message show instead
+        console.log("Host check result:", isHostUser);
       } catch (err) {
         console.error("Error verifying host:", err);
-        // In case of API error, we'll show an error state but allow retry
-        // This handles temporary network issues
+        const errorMessage = err.response?.data?.message || err.message || "Failed to load meeting";
+        setError(errorMessage);
         setIsHost(false);
       } finally {
         setLoading(false);
@@ -156,7 +184,7 @@ const verifyHost = async () => {
     verifyHost();
   }, [roomId, user, navigate]);
 
-  if (loading) {
+if (loading) {
     return (
       <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <CircularProgress />
@@ -164,8 +192,61 @@ const verifyHost = async () => {
     );
   }
 
-  if (!isHost) {
-    return null;
+  // Show error message if there's an error
+  if (error) {
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: "#f4f6f8", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 2, p: 3 }}>
+        <Container maxWidth="sm">
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+          <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+            <Button 
+              variant="contained" 
+              startIcon={<ArrowBack />}
+              onClick={() => navigate("/home")}
+            >
+              Go to Dashboard
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+    );
+  }
+
+  // If user is not host, show info message instead of forcing redirect
+  if (!isHost && !error) {
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: "#f4f6f8", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 2, p: 3 }}>
+        <Container maxWidth="sm">
+          <Alert severity="info" sx={{ mb: 2 }}>
+            You are not the host of this meeting. Only the host can view the live dashboard.
+          </Alert>
+          {meetingInfo && (
+            <Paper sx={{ p: 2, mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">Meeting: {meetingInfo.title}</Typography>
+              <Typography variant="body2" color="text.secondary">Host: {meetingInfo.hostName}</Typography>
+              <Typography variant="body2" color="text.secondary">Status: {meetingInfo.status}</Typography>
+            </Paper>
+          )}
+          <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+            <Button 
+              variant="contained" 
+              startIcon={<ArrowBack />}
+              onClick={() => navigate("/home")}
+            >
+              Go to Dashboard
+            </Button>
+          </Box>
+        </Container>
+      </Box>
+    );
   }
 
   return (

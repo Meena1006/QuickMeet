@@ -91,20 +91,6 @@ cd frontend
 npm install
 ```
 
-### 2. Environment Variables
-
-**Backend** (`backend/.env`):
-```env
-PORT=8000
-MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/
-JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
-JWT_EXPIRE=7d
-```
-
-**Frontend** (`frontend/.env`):
-```env
-REACT_APP_API_BASE_URL=http://localhost:8000
-```
 
 ### 3. Run the Application
 
